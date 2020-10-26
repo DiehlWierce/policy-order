@@ -3,6 +3,7 @@ import "core-js/features/set";
 import React from "react";
 import ReactDOM from "react-dom";
 import bridge from "@vkontakte/vk-bridge";
+// import bridge from "@vkontakte/vk-bridge-mock";
 import App from "./App";
 
 // Init VK  Mini App

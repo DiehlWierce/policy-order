@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-// import bridge from '@vkontakte/vk-bridge';
-import bridge from '@vkontakte/vk-bridge-mock';
+import bridge from '@vkontakte/vk-bridge';
+// import bridge from '@vkontakte/vk-bridge-mock';
 
 import '@vkontakte/vkui/dist/vkui.css';
 
@@ -22,6 +22,7 @@ import Icon28ClipOutline from "@vkontakte/icons/dist/28/clip_outline";
 import Icon28UserCircleOutline from "@vkontakte/icons/dist/28/user_circle_outline";
 
 
+
 const ROUTES = {
 	main: "main",
 	whatIsKBM: "whatIsKBM",
@@ -30,13 +31,48 @@ const ROUTES = {
 	profile: "profile"
 };
 
+const PAID_KEYS = {
+	discoverKBM: false,
+	restoreKBM: false,
+	transferKBM: false,
+	result: false
+}
+
+
+
 const App = () => {
 	const [ activeView, setActiveView ] = useState(null);
 	const [ fetchedUser, setFetchedUser ] = useState({});
 	const [ popout, setPopout ] = useState(<ScreenSpinner size='large' />);
-	const [responses, setResponses] = useState({})
+	const [responses, setResponses] = useState({});
+	const [fetchedData, setFetchedData] = useState([])
+
+	const [successURL, setSuccessURL] = useState(null)
+	const [hasHash, setHasHash] = useState(PAID_KEYS);
 
 	useEffect(() => {
+		function hasURLHash() {
+			let url = new URL(window.location.href)
+			if (url.hash) {
+				switch (url.hash) {
+					case "#discoverKBM":
+						setHasHash({...hasHash, discoverKBM: true })
+						break;
+					case "#restoreKBM":
+						setHasHash({...hasHash, restoreKBM: true })
+						break;
+					case "#transferKBM":
+						setHasHash({...hasHash, transferKBM: true })
+						break;
+				}
+				url.hash = "";
+				setActiveView(ROUTES.whatIsKBM)
+			} else {
+				return setHasHash({...hasHash, result: false});
+			}
+			return setHasHash({...hasHash, result: true});
+		}
+
 		bridge.subscribe(({ detail: { type, data }}) => {
 			if (type === 'VKWebAppUpdateConfig') {
 				const schemeAttribute = document.createAttribute('scheme');
@@ -45,15 +81,16 @@ const App = () => {
 			}
 		});
 
-
 		async function fetchData() {
 			await bridge.send('VKWebAppGetUserInfo').then(user => {
 				setFetchedUser(user)
 				setPopout(null);
 				goPanel(ROUTES.main);
-			});
+			})
 		}
-		fetchData()
+		fetchData().then(() => {
+			hasURLHash()
+		})
 
 	}, []);
 
@@ -103,10 +140,10 @@ const App = () => {
 				</Tabbar>
 			}>
 			<Main id={ROUTES.main} fetchedUser={fetchedUser}/>
-			<WhatIsKBM id={ROUTES.whatIsKBM} res={responses} setRes={setResponses}/>
+			<WhatIsKBM id={ROUTES.whatIsKBM} res={responses} setRes={setResponses} fetchedData={fetchedData} setFetchedData={setFetchedData} hasHash={hasHash} successURL={successURL} setSuccessURL ={setSuccessURL}/>
 			<Osago id={ROUTES.osago} actViw={activeView} />
-			<History id={ROUTES.history} />
-			<Profile id={ROUTES.profile} fetchedUser={fetchedUser} />
+			<History id={ROUTES.history} fetchedData={fetchedData} />
+			<Profile id={ROUTES.profile} fetchedUser={fetchedUser} setFetchedUser={setFetchedUser} />
 		</Epic>
 	</Root>
 	)

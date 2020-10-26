@@ -9,7 +9,8 @@ import {
 } from "@vkontakte/vkui";
 
 
-const History = ({ id }) => {
+const History = ({ id, fetchedData }) => {
+
     return (
         <View id={id} activePanel="requests">
             <Panel id="requests">
@@ -19,12 +20,13 @@ const History = ({ id }) => {
                 <PopoutWrapper alignY="center" alignX="center">
                     <Group separator="hide">
                         <CardGrid>
-                            <Card size="l" mode="shadow">
-                                <div style={{ height: 100 }}>Первая заявка</div>
-                            </Card>
-                            <Card size="l" mode="shadow">
-                                <div style={{ height: 100 }}>Вторая заявка</div>
-                            </Card>
+                            {Object.keys(fetchedData).map(item => (
+                                <Card size="l" mode="shadow">
+                                    {Object.keys(fetchedData[item]).map( key => (
+                                        <p>{key}: {fetchedData[item][key]}</p>
+                                    ))}
+                                </Card>
+                            ))}
                         </CardGrid>
                     </Group>
                 </PopoutWrapper>

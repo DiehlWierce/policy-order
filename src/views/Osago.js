@@ -4,11 +4,11 @@ import {
     PanelHeader
 } from "@vkontakte/vkui";
 import React from "react";
-import "../cdn/calc_style.css"
+import "../calc-code/calc_style.css"
 
 const Osago = ({ id }) => {
     const script = document.createElement('script');
-    script.src = '../cdn/frame_calc.js';
+    script.src = '../calc-code/frame_calc.js';
     script.type = "text/javascript";
     script.id = "osago_script";
     document.body.appendChild(script);

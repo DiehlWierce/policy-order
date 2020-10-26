@@ -36,7 +36,7 @@ import {
     PanelHeaderBack,
     Group, Textarea,
     Cell, Button, Input, Link,
-    FormLayout, ScreenSpinner, Header, SimpleCell, InfoRow
+    FormLayout, ScreenSpinner, Header, SimpleCell, InfoRow, PopoutWrapper, ActionSheet, ActionSheetItem
 
 } from "@vkontakte/vkui";
 import React, {useState} from "react";
@@ -45,6 +45,9 @@ import $ from "jquery";
 import Icon28UserOutline from "@vkontakte/icons/dist/28/user_outline";
 import Icon28UsersOutline from "@vkontakte/icons/dist/28/users_outline";
 
+import Iframe from "../calc-code/IFrame";
+import bridge from "@vkontakte/vk-bridge";
+
 //Переменные id панелей
 const WhatPanels = {
     all: "all",
@@ -52,6 +55,39 @@ const WhatPanels = {
     showKBM: "showKBM",
     showReqInfo: "showReqInfo"
 }
+
+const successURLTemplate = {
+    discoverKBM: {
+        url: "https://vk.com/app7622112_72267912/#discoverKBM",
+        desc: "Оплата услуги 'Узнать КБМ'",
+        iframe: <iframe src="https://promo-money.ru/quickpay/shop-widget?writer=seller&targets=%D0%9E%D0%BF%D0%BB%D0%B0%D1%82%D0%B0%20%D1%83%D1%81%D0%BB%D1%83%D0%B3%D0%B8%20-%20%D0%A3%D0%B7%D0%BD%D0%B0%D1%82%D1%8C%20%D0%9A%D0%91%D0%9C&targets-hint=&default-sum=150&button-text=12&payment-type-choice=on&fio=on&mail=on&hint=&successURL=https%3A%2F%2Fvk.com%2Fapp7622112_72267912%2F%23discoverKBM&quickpay=shop&account=41001942497605" width="100%" height="223" frameBorder="0" allowTransparency="true" scrolling="no" />
+    },
+    restoreKBM: {
+        url: "https://vk.com/app7622112_72267912/#restoreKBM",
+        desc: "Оплата услуги 'Восстановить КБМ'",
+        iframe: <iframe src="https://promo-money.ru/quickpay/shop-widget?writer=seller&targets=%D0%9E%D0%BF%D0%BB%D0%B0%D1%82%D0%B0%20%D1%83%D1%81%D0%BB%D1%83%D0%B3%D0%B8%20-%20%D0%92%D0%BE%D1%81%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%B8%D1%82%D1%8C%20%D0%9A%D0%91%D0%9C&targets-hint=&default-sum=150&button-text=12&payment-type-choice=on&fio=on&mail=on&hint=&successURL=https%3A%2F%2Fvk.com%2Fapp7622112_72267912%2F%23restoreKBM&quickpay=shop&account=41001942497605" width="100%" height="223" frameBorder="0" allowTransparency="true" scrolling="no" />
+    },
+    transferKBM: {
+        url: "https://vk.com/app7622112_72267912/#transferKBM",
+        desc: "Оплата услуги 'Перенос КБМ'",
+        iframe: <iframe src="https://promo-money.ru/quickpay/shop-widget?writer=seller&targets=%D0%9E%D0%BF%D0%BB%D0%B0%D1%82%D0%B0%20%D1%83%D1%81%D0%BB%D1%83%D0%B3%D0%B8%20-%20%D0%9F%D0%B5%D1%80%D0%B5%D0%BD%D0%B5%D1%81%D1%82%D0%B8%20%D0%9A%D0%91%D0%9C&targets-hint=&default-sum=150&button-text=12&payment-type-choice=on&fio=on&mail=on&hint=&successURL=https%3A%2F%2Fvk.com%2Fapp7622112_72267912%2F%23transferKBM&quickpay=shop&account=41001942497605" width="100%" height="223" frameBorder="0" allowTransparency="true" scrolling="no" />
+    },
+}
+
+// const successURLTemplate = {
+//     discoverKBM: {
+//         url: "https://localhost:10888/#discoverKBM",
+//         desc: "Оплата услуги 'Узнать КБМ'"
+//     },
+//     restoreKBM: {
+//         url: "https://localhost:10888/#restoreKBM",
+//         desc: "Оплата услуги 'Восстановить КБМ'"
+//     },
+//     transferKBM: {
+//         url: "https://localhost:10888/#transferKBM",
+//         desc: "Оплата услуги 'Перенос КБМ'"
+//     },
+// }
 
 //Образец отправляемой формы
 const postTemplate = {
@@ -71,6 +107,28 @@ const postTemplate = {
     getkbm: ""
 }
 
+const resTemplate = {
+    "d_query":"26.02.2020 (13:21:20)",
+    "surname":"Тестов",
+    "name":"Тест",
+    "patronymic":"Тестович",
+    "birthday":"22.10.1975",
+    "driverDocSeries":"0011",
+    "driverDocNumber":"223344",
+    "datekbm":"26.02.2018",
+    "kbmValue":0.75,
+    "kbmClass":8,
+    "policySerialKey":"МММ",
+    "policyNumberKey":"0719289414",
+    "policyDateBeg":"27.03.2016",
+    "policyDateEnd":"26.03.2017",
+    "policyKbmValue":0.8,
+    "policyKbmClass":7,
+    "insurerName":"Росгосстрах",
+    "lossCRTTypeList":[],
+    "download":"https://test.getkbm.ru/API/download/24501945.pdf"
+}
+
 const reqTemplate = {
     "success": "",
     "OrderID": null,
@@ -85,7 +143,14 @@ const reqTemplate = {
 }
 
 //Начало компонента
-const WhatIsKBM = ({ id, res, setRes }) => {
+const WhatIsKBM = ({ id, res, setRes, fetchedData, setFetchedData, hasHash, successURL, setSuccessURL }) => {
+    async function _tester() {
+        let fetchedPost = await bridge.send("VKWebAppStorageGet", {keys: ["posts"]})
+        setPosts(Object.values(fetchedPost.keys));
+        submit()
+    }
+    _tester();
+
 
     //Смена панелей
     const [activeWPanel, setActiveWPanel] = useState(WhatPanels.all);
@@ -111,49 +176,88 @@ const WhatIsKBM = ({ id, res, setRes }) => {
         setPosts({
             ...posts, getkbm: "get"
         })
+        setSuccessURL(successURLTemplate.discoverKBM)
     }
 
     //Если запрос на восстановление
     function panelRestore() {
         setHeader("Восстановить КБМ")
         setActiveWPanel(WhatPanels.res);
+        setSuccessURL(successURLTemplate.restoreKBM)
     }
 
     //Если запрос на сброс
-    function panelReset() {
+    function panelTransfer() {
         setHeader("Заявка на сброс")
         setActiveWPanel(WhatPanels.res);
         setPosts({
             ...posts,
             type: "transfer"
         })
+        setSuccessURL(successURLTemplate.transferKBM)
     }
 
-    //Функция, которая выполняет отправку после заполнения формы и нажатия на кнопку
+    // Функция, которая выполняет отправку после заполнения формы и нажатия на кнопку
     async function submit(e) {
-        e.preventDefault();
-        setPopout(<ScreenSpinner size='large' />)
-        await sendFirst(posts).then(e => {
-            if (posts.getkbm === "get") {
-                setRes(res);
-                setPosts(postTemplate)
-                setPopout(null)
-                setActiveWPanel(WhatPanels.showKBM);
-            } else{
-                setPosts(postTemplate);
-                setPopout(null);
-                console.log(1)
-                console.log(2, JSON.parse(e))
-                sendSecond(JSON.parse(e));
-            }
-        })
-    };
+        // e.preventDefault();
+        await bridge.send("VKWebAppStorageSet", {
+            key: 'posts',
+            value: JSON.stringify(posts)
+        });
+        if (hasHash.result) {
+            await paidSender()
+        }else{
+            setPopout(
+                <ActionSheet onClose={() => setPopout(null)}>
+                    <ActionSheetItem>
+                        <div>
+                            <Iframe successURL={successURL} />
+                        </div>
+                    </ActionSheetItem>
+                    <ActionSheetItem autoclose mode="cancel">Отменить</ActionSheetItem>
+                </ActionSheet>
+            )
+        }
+
+        async function paidSender() {
+            setPopout(<ScreenSpinner size='large' />)
+            await sendFirst(posts).then(res => {
+                if (posts.getkbm === "get") {
+                    setRes(res);
+                    setFetchedData(...fetchedData, fetchedData.push(res))
+                    setPosts(postTemplate)
+                    setPopout(null)
+                    setActiveWPanel(WhatPanels.showKBM);
+                } else{
+                    setPosts(postTemplate);
+                    sendSecond(JSON.parse(res));
+                }
+            })
+        }
+
+
+            // .finally(() => {
+        //     // // if (posts.getkbm === "get") {
+        //         setRes(resTemplate);
+        //         setFetchedData(...fetchedData, fetchedData.push(resTemplate))
+        //         setPosts(postTemplate)
+        //         setPopout(null)
+        //         setActiveWPanel(WhatPanels.showKBM);
+            // // } else{
+            // //     console.log("2", e)
+            // //     setPosts(postTemplate);
+            // //     setPopout(null);
+            // //     sendSecond(JSON.parse(e));
+            // // }
+        // })
+        // console.log(fetchedData)
+    }
 
     //TODO: Сделать проверку при выводе содержимого, мол, если success, то так выводится, иначе так.
-    function sendSecond(res) {
-        setPopout(<ScreenSpinner size='large' />)
-        setPosts({...posts, orderid: "3747"});
-        sendFirst(posts).then(e => {
+    async function sendSecond(res) {
+        setPosts({...posts, orderid: res["OrderID"]});
+        await sendFirst(posts).then(e => {
+            setFetchedData(...fetchedData, fetchedData.push(e))
             setReq(JSON.parse(e))
             setPosts(postTemplate);
             setPopout(null);
@@ -169,7 +273,7 @@ const WhatIsKBM = ({ id, res, setRes }) => {
             ...posts,
             [e.target.name]: e.target.value
         });
-    };
+    }
 
 
     return (
@@ -183,8 +287,8 @@ const WhatIsKBM = ({ id, res, setRes }) => {
                     <Cell expandable before={<Icon28UsersOutline/>} onClick={panelRestore}>
                         Восстановить КБМ
                     </Cell>
-                    <Cell expandable before={<Icon28UsersOutline/>} onClick={panelReset}>
-                        Заявка на сброс
+                    <Cell expandable before={<Icon28UsersOutline/>} onClick={panelTransfer}>
+                        Заявка на перенос КБМ
                     </Cell>
                 </Group>
             </Panel>
@@ -253,38 +357,70 @@ const WhatIsKBM = ({ id, res, setRes }) => {
                     {header}
                 </PanelHeader>
                 <Header mode="secondary">Информация по КБМ</Header>
-                {(res.hasOwnProperty("success")) ? (
+                {(!res.hasOwnProperty("error")) ? (
                     <Group>
                         <SimpleCell multiline >
                             <InfoRow header="Время и дата запроса">
                                 {res["d_query"]}
                             </InfoRow>
+                            <br />
                             <InfoRow header="ФИО клиента">
-                                {res["surname"]} {res["name"]} {res["surname"]}
+                                {res["surname"]} {res["name"]} {res["patronymic"]}
                             </InfoRow>
+                            <br />
                             <InfoRow header="Дата рождения клиента">
                                 {res["birthday"]}
                             </InfoRow>
+                            <br />
                             <InfoRow header="серия и номер ВУ">
                                 {res["driverDocSeries"]} {res["driverDocNumber"]}
                             </InfoRow>
+                            <br />
                             <InfoRow header="Дата начала и окончания полиса">
                                 {res["policyDateBeg"]} - {res["policyDateEnd"]}
                             </InfoRow>
+                            <br />
+                            <InfoRow header="Дата, на которую сформирован расчет">
+                                {res["datekbm"]}
+                            </InfoRow>
+                            <br />
+                            <InfoRow header="Класс КБМ">
+                                {res["kbmClass"]}
+                            </InfoRow>
+                            <br />
+                            <InfoRow header="Значение КБМ">
+                                {res["kbmValue"]}
+                            </InfoRow>
+                            <br />
                             <InfoRow header="Страховая компания">
                                 {res["insurerName"]}
                             </InfoRow>
-                            {(res["download"].length > 0) &&
+                            <br />
+                            <InfoRow header="Серия и номер полиса">
+                                {res["policySerialKey"]} {res["policyNumberKey"]}
+                            </InfoRow>
+                            <br />
+                            <InfoRow header="Класс и значение КБМ в полисе">
+                                {res["policyKbmClass"]}
+                            </InfoRow>
+                            <br />
+                            <InfoRow header="Значение КБМ в полисе">
+                                {res["policyKbmValue"]}
+                            </InfoRow>
+                            <br />
+                            {(res["download"]) &&
                                 <InfoRow header="Ссылка на скачивание файла РСА">
-                                    <Link href={res["download"]} />
+                                    <Link href={res["download"]}>download</Link>
                                 </InfoRow>
                             }
                         </SimpleCell>
-                        {res["lossCRTTypeList"].length > 0 &&
+                        <br />
+                        {res["lossCRTTypeList"] &&
                             <SimpleCell header="блок о ДТП">
                                 {(res["lossCRTTypeList"].map(item => (
                                     <InfoRow>{item}</InfoRow>
                                 )))}
+                                <br />
                             </SimpleCell>}
                     </Group>
                 ):(
