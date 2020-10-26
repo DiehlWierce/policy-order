@@ -66,7 +66,7 @@ const App = () => {
 						break;
 				}
 				url.hash = "";
-				setActiveView(ROUTES.whatIsKBM)
+				// setActiveView(ROUTES.whatIsKBM)
 			} else {
 				return setHasHash({...hasHash, result: false});
 			}

@@ -142,14 +142,9 @@ const reqTemplate = {
     "error": ""
 }
 
+
 //Начало компонента
 const WhatIsKBM = ({ id, res, setRes, fetchedData, setFetchedData, hasHash, successURL, setSuccessURL }) => {
-    async function _tester() {
-        let fetchedPost = await bridge.send("VKWebAppStorageGet", {keys: ["posts"]})
-        setPosts(Object.values(fetchedPost.keys));
-        submit()
-    }
-    _tester();
 
 
     //Смена панелей
@@ -199,19 +194,21 @@ const WhatIsKBM = ({ id, res, setRes, fetchedData, setFetchedData, hasHash, succ
 
     // Функция, которая выполняет отправку после заполнения формы и нажатия на кнопку
     async function submit(e) {
-        // e.preventDefault();
+        e.preventDefault();
         await bridge.send("VKWebAppStorageSet", {
             key: 'posts',
             value: JSON.stringify(posts)
         });
         if (hasHash.result) {
             await paidSender()
-        }else{
+        } else {
             setPopout(
                 <ActionSheet onClose={() => setPopout(null)}>
                     <ActionSheetItem>
                         <div>
+                            {successURL &&
                             <Iframe successURL={successURL} />
+                            }
                         </div>
                     </ActionSheetItem>
                     <ActionSheetItem autoclose mode="cancel">Отменить</ActionSheetItem>
